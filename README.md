@@ -1,3 +1,3 @@
-# demo 2
+# pong in python
 
-classic pong game unsing pygame library
+classic pong game using pygame library
