@@ -1,3 +1,3 @@
 # demo 2
 
-repo created in local
+classic pong game unsing pygame library
