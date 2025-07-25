@@ -1,4 +1,4 @@
-import pygame
+import pygame,math,time
 from sys import exit
 
 pygame.init()
@@ -41,50 +41,81 @@ class paddle():
 
 class ball():
     def __init__(self):
+        #creating self.pos create unsessary ovrehead of kepping
+        # it updated with tha actual rect pos hence it is advise to not use it
+        # abd just update the rect pos directly
         self.pos = [screen_width/2,screen_height/2]
         self.rect = pygame.Rect(self.pos,(20,20))
         self.speed_x = -4
         self.speed_y = 4
 
-    def move(self):
- 
-        self.bounce()
-        self.pos[0] += self.speed_x
-        self.pos[1] += self.speed_y
-
-
-    def bounce(self):
+    def move(self,paddles):
         global score,view
-
         if self.rect.left <=0:
             score = 0
             self.pos = [screen_width/2,screen_height/2]
+            self.speed_x = -4
+            self.speed_y = 4
             view = "start"
             
         if self.rect.right >= screen_width:
             score += 1
+            self.speed_x = -4
+            self.speed_y = 4
             self.pos = [screen_width/2,screen_height/2]
         
+        
+        self.pos[1] += self.speed_y
+        self.rect.y = self.pos[1]
         if self.rect.top <= 0 or self.rect.bottom >= screen_height:
-            self.speed_y *= -1
+            self.speed_y = -self.speed_y
+            
+        for paddle in paddles:
+            if self.rect.colliderect(paddle) :
+                self.rect.y = paddle.bottom if self.rect.top >= (paddle.centery) else paddle.top-self.rect.h
+                self.pos[1] = self.rect.y
+                self.speed_y *= -1
+        
+
+        self.pos[0] += self.speed_x
+        self.rect.x = self.pos[0]
+        if self.rect.colliderect(paddles[0]) :
+            self.rect.left = paddles[0].right
+            self.pos[0] = self.rect.x
+            self.speed_x *= -1
+        if self.rect.colliderect(paddles[1]) :
+            self.rect.right = paddles[1].left
+            self.pos[0] = self.rect.x
+            self.speed_x *= -1
+        
+
+        
 
     def return_pos(self):
         return self.pos
         
     def draw(self,surface):
-        r = pygame.Rect(self.pos,(20,20))
-        self.rect = r
-        pygame.draw.rect(surface,(225,225,225),r)
+        pygame.draw.rect(surface,(225,225,225),self.rect)
 
 
 class btn:
     def __init__(self,text):
         self.text = text
         self.rect = pygame.Rect(0,0,0,0)
+        self.surf = pygame.Surface((10,10))
+        self.wave = pygame.Vector2((0,5))
     def display(self,surface):
-        self.surf = test_font.render(self.text,False,(255,255,255))
+        self.surf = test_font.render(self.text,False,(255,255,255),(100,100,255))
         self.rect = self.surf.get_rect(center = (screen_width/2,screen_height/2))
+        self.hover()
+        pygame.draw.rect(surface,(100,100,225),self.rect)
         screen.blit(self.surf,self.rect)
+
+    def hover(self):
+        self.rect.y = math.floor(screen_height-self.rect.h)/2 +self.wave[1]
+        self.wave = self.wave.rotate(5) 
+
+
     def run(self):
         if self.rect.collidepoint(pygame.mouse.get_pos()):
             global view
@@ -126,8 +157,8 @@ while True:
 
         enemy_paddle.move(Ball.return_pos())
         player.move()
-        collision([player.rect,enemy_paddle.rect],Ball)
-        Ball.move()
+        #collision([player.rect,enemy_paddle.rect],Ball)
+        Ball.move([player.rect,enemy_paddle.rect])
 
         pygame.draw.line(surface,(225,225,225),(screen_width/2,0),(screen_width/2,screen_height),2)
         
