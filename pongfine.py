@@ -34,8 +34,7 @@ class button():
     def __init__(self,text,pos):
         self.surf = test_font.render(text,True,white,(0,50,50))
         self.rect = self.surf.get_rect(center = pos)
-        print((screen_height-self.rect.h)/2)
-        self.wave = pygame.math.Vector2((0,5))
+        self.wave = pygame.math.Vector2((0,4))
 
     def hover(self):
         #if not self.pressed():
@@ -91,7 +90,7 @@ def ball_collision(ball,p,cpu):
         ball.right = cpu.rect.left
         b_xv = -b_xv*1.1
     if abs(b_xv)>10:
-        b_xv = 10* (-1 if b_xv<0 else 1)
+        b_xv %= 10
     if ball.left <=0:
         s2+=1
         reset_ball()

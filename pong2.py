@@ -30,22 +30,21 @@ class paddle():
                 self.pos[1] -= self.speed
         
         else:
-            if ball_pos [1] - self.y_offset >= 0 and ball_pos[1] + self.y_offset + 20 <= screen_height and ball_pos[0] >= screen_width/2:
-                self.pos[1] += (ball_pos[1] - self.pos[1] - self.y_offset)*0.04
+            if ball_pos [1] - self.y_offset >= 0 and ball_pos[1] + self.y_offset <= screen_height and ball_pos[0] >= screen_width/2:
+                self.pos[1] += (ball_pos[1] - self.rect.centery)*0.04
 
+        self.rect = pygame.Rect(self.pos,(20,screen_height/5))
 
     def draw(self,surface):
-        r = pygame.Rect(self.pos,(20,screen_height/4))
-        self.rect = r
-        pygame.draw.rect(surface,(225,225,225),r)
+        pygame.draw.rect(surface,(225,225,225),self.rect)
 
 class ball():
     def __init__(self):
         #creating self.pos create unsessary ovrehead of kepping
         # it updated with tha actual rect pos hence it is advise to not use it
         # abd just update the rect pos directly
-        self.pos = [screen_width/2,screen_height/2]
-        self.rect = pygame.Rect(self.pos,(20,20))
+        #self.pos = [screen_width/2,screen_height/2]
+        self.rect = pygame.Rect((screen_width/2,screen_height/2),(20,20))
         self.speed_x = -4
         self.speed_y = 4
 
@@ -53,49 +52,42 @@ class ball():
         global score,view
         if self.rect.left <=0:
             score = 0
-            self.pos = [screen_width/2,screen_height/2]
-            self.speed_x = -4
-            self.speed_y = 4
+            self.__init__()
             view = "start"
             
         if self.rect.right >= screen_width:
             score += 1
-            self.speed_x = -4
-            self.speed_y = 4
-            self.pos = [screen_width/2,screen_height/2]
+            self.__init__()
         
         
-        self.pos[1] += self.speed_y
-        self.rect.y = self.pos[1]
-        if self.rect.top <= 0 or self.rect.bottom >= screen_height:
+        newpos = self.rect.move(0,self.speed_y)
+        if newpos.top <= 0 or newpos.bottom >= screen_height:
             self.speed_y = -self.speed_y
             
         for paddle in paddles:
-            if self.rect.colliderect(paddle) :
-                self.rect.y = paddle.bottom if self.rect.top >= (paddle.centery) else paddle.top-self.rect.h
-                self.pos[1] = self.rect.y
+            if newpos.colliderect(paddle) :
+                newpos.y = paddle.bottom if newpos.top >= (paddle.centery) else paddle.top-newpos.h
                 self.speed_y *= -1
         
 
-        self.pos[0] += self.speed_x
-        self.rect.x = self.pos[0]
-        if self.rect.colliderect(paddles[0]) :
-            self.rect.left = paddles[0].right
-            self.pos[0] = self.rect.x
+        newpos = newpos.move(self.speed_x,0)
+        if newpos.colliderect(paddles[0]) :
+            newpos.left = paddles[0].right
             self.speed_x *= -1
-        if self.rect.colliderect(paddles[1]) :
-            self.rect.right = paddles[1].left
-            self.pos[0] = self.rect.x
+        if newpos.colliderect(paddles[1]) :
+            newpos.right = paddles[1].left
             self.speed_x *= -1
+        
+        self.rect = newpos
         
 
         
 
     def return_pos(self):
-        return self.pos
+        return self.rect.center
         
     def draw(self,surface):
-        pygame.draw.rect(surface,(225,225,225),self.rect)
+        pygame.draw.circle(surface,(225,225,225),(self.rect.centerx,self.rect.centery),10)
 
 
 class btn:
@@ -133,15 +125,6 @@ def display_score(scr):
     score_rect = score_surface.get_rect(center = (screen_width/2,50))
     screen.blit(score_surface,score_rect)
 
-def collision(paddles,ball):
-    for paddle in paddles:
-        if paddle.colliderect(ball.rect):
-            if paddle.right == ball.rect.left + 4 or paddle.left == ball.rect.right - 4:       #change according to speed
-                ball.speed_x *= -1
-            else:
-                ball.speed_y *= -1
-        else:
-            pass
 
 while True:
     for event in pygame.event.get():
@@ -157,7 +140,6 @@ while True:
 
         enemy_paddle.move(Ball.return_pos())
         player.move()
-        #collision([player.rect,enemy_paddle.rect],Ball)
         Ball.move([player.rect,enemy_paddle.rect])
 
         pygame.draw.line(surface,(225,225,225),(screen_width/2,0),(screen_width/2,screen_height),2)
@@ -173,5 +155,6 @@ while True:
         button.display(surface)
     pygame.display.update()
     clock.tick(60)
+pygame.quit()
         
     
