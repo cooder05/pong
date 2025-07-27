@@ -3,8 +3,8 @@ from sys import exit
 
 pygame.init()
 
-screen_width = 600
-screen_height = 500
+screen_width = 700
+screen_height = 400
 screen = pygame.display.set_mode((screen_width,screen_height))
 pygame.display.set_caption('Pong')
 test_font = pygame.font.Font(None,50)
@@ -15,7 +15,7 @@ class paddle():
     def __init__(self, player = False):
         
         self.y_offset = screen_height/10
-        self.pos = [580*(not player),screen_height/2 - self.y_offset]
+        self.pos = [(screen_width-20)*(not player),screen_height/2 - self.y_offset]
         self.rect = pygame.Rect(self.pos,(20,screen_height/5))
         self.speed = 5
         self.player = player
@@ -49,14 +49,13 @@ class ball():
         self.speed_y = 4
 
     def move(self,paddles):
-        global score,view
+        global s1,s2,view
         if self.rect.left <=0:
-            score = 0
+            s2 += 1
             self.__init__()
-            view = "start"
             
         if self.rect.right >= screen_width:
-            score += 1
+            s1 += 1
             self.__init__()
         
         
@@ -80,9 +79,6 @@ class ball():
         
         self.rect = newpos
         
-
-        
-
     def return_pos(self):
         return self.rect.center
         
@@ -96,12 +92,12 @@ class btn:
         self.rect = pygame.Rect(0,0,0,0)
         self.surf = pygame.Surface((10,10))
         self.wave = pygame.Vector2((0,5))
-    def display(self,surface):
-        self.surf = test_font.render(self.text,False,(255,255,255),(100,100,255))
-        self.rect = self.surf.get_rect(center = (screen_width/2,screen_height/2))
+        
+    def display(self,surface,pos =(0,0)):
+        self.surf = test_font.render(self.text,True,(255,255,255),(100,100,255))
+        self.rect = self.surf.get_rect(center = pos)
         self.hover()
-        pygame.draw.rect(surface,(100,100,225),self.rect)
-        screen.blit(self.surf,self.rect)
+        surface.blit(self.surf,self.rect)
 
     def hover(self):
         self.rect.y = math.floor(screen_height-self.rect.h)/2 +self.wave[1]
@@ -113,19 +109,19 @@ class btn:
             global view
             view = "game"
 
+
+def display_text(text: str,surface,pos=(0,0),color = (255,255,255),bgcolor = (0,0,0)):
+    text_surf = test_font.render(text,True,color)
+    text_rect = text_surf.get_rect(center = pos)
+    surface.blit(text_surf,text_rect)
+
 Ball = ball()
 surface = pygame.Surface(screen.get_size())
 surface = surface.convert()
 player = paddle(True)
 enemy_paddle = paddle() 
-score = 0
-button = btn("play")
-def display_score(scr):
-    score_surface = test_font.render('score: ' + str(scr),False,(225,225,225))
-    score_rect = score_surface.get_rect(center = (screen_width/2,50))
-    screen.blit(score_surface,score_rect)
-
-
+s1,s2 = 0,0
+button = btn("single player")
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -133,6 +129,12 @@ while True:
             exit()
         elif event.type == pygame.MOUSEBUTTONDOWN:
             button.run()
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                Ball.__init__()
+                player.__init__(True)
+                enemy_paddle.__init__()
+                view = "start"       
 
     if view == "game":
     #game window
@@ -147,14 +149,16 @@ while True:
         enemy_paddle.draw(surface)
         player.draw(surface)
         Ball.draw(surface)
+        display_text(str(s1),surface,(screen_width/4,20))
+        display_text(str(s2),surface,(3*screen_width/4,20))
+
         screen.blit(surface,(0,0))
-        display_score(score)
     elif view == "start":
         surface.fill((150,100,150))
+        display_text("Pong",surface,(screen_width/2,screen_height/2 -100))
+        button.display(surface,(screen_width/2,screen_height/2))
+
         screen.blit(surface,(0,0))
-        button.display(surface)
     pygame.display.update()
     clock.tick(60)
 pygame.quit()
-        
-    
