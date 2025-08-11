@@ -33,7 +33,7 @@ class paddle():
         
         else:
             if ball_pos [1] - self.y_offset >= 0 and ball_pos[1] + self.y_offset <= screen_height and ball_pos[0] >= screen_width/2:
-                self.pos[1] += (ball_pos[1] - self.rect.centery)*0.06
+                self.pos[1] += math.floor((ball_pos[1] - self.rect.centery)*0.07)
 
         self.rect = pygame.Rect(self.pos,(10,screen_height/5))
 
@@ -79,11 +79,13 @@ class ball():
             self.speed_x *= -1.1
             self.speed_x %= 10
             self.speed_x = math.floor(self.speed_x)
+            test_sound.play()
         if newpos.colliderect(paddles[1]) :
             newpos.right = paddles[1].left
             self.speed_x *= -1.1
             self.speed_x %= -10
             self.speed_x = math.floor(self.speed_x)
+            test_sound.play()
         
         self.rect = newpos
         
@@ -123,7 +125,7 @@ class btn:
             elif type == "end":
                 view = "start"
             self.clicked = True
-        if pygame.mouse.get_pressed()[0]:
+        if not pygame.mouse.get_pressed()[0] and self.clicked:
             self.clicked = False
 def display_text(text: str,surface,pos=(0,0),color = (255,255,255),bgcolor = (0,0,0)):
     text_surf = test_font.render(text,True,color)
@@ -160,16 +162,16 @@ while True:
         display_text(str(s2),surface,(3*screen_width/4,20))
 
     elif view == "start":
+        s1,s2 = 0,0
         surface.fill((150,100,150))
         display_text("Pong",surface,(screen_width/2,screen_height/2 -100))
         b1.display(surface,(screen_width/2,screen_height/2))
         b1.run("start")
     elif view == "end":
         surface.fill((150,100,150))
-        display_text("you won" if s1 ==10 else "you lost",surface,(screen_width/2,screen_height/2 -100))
+        display_text("you won" if s1==5 else "you lost",surface,(screen_width/2,screen_height/2 -100))
         b2.display(surface,(screen_width/2,screen_height/2))
         b2.run("end")
-        s1,s2 = 0,0
 
     screen.blit(surface,(0,0))
     pygame.display.update()
