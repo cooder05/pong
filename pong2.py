@@ -8,6 +8,8 @@ screen_height = 400
 screen = pygame.display.set_mode((screen_width,screen_height))
 pygame.display.set_caption('Pong')
 test_font = pygame.font.Font(None,50)
+test_sound = pygame.mixer.Sound("10844.mp3")
+test_sound2 = pygame.mixer.Sound("10676.mp3")
 clock = pygame.time.Clock()
 view ="start" 
 
@@ -31,7 +33,7 @@ class paddle():
         
         else:
             if ball_pos [1] - self.y_offset >= 0 and ball_pos[1] + self.y_offset <= screen_height and ball_pos[0] >= screen_width/2:
-                self.pos[1] += (ball_pos[1] - self.rect.centery)*0.04
+                self.pos[1] += (ball_pos[1] - self.rect.centery)*0.06
 
         self.rect = pygame.Rect(self.pos,(10,screen_height/5))
 
@@ -58,6 +60,8 @@ class ball():
             s1 += 1
             self.__init__()
         
+        if s1 == 5 or s2 ==5:
+            view = "end"
         
         newpos = self.rect.move(0,self.speed_y)
         if newpos.top <= 0 or newpos.bottom >= screen_height:
@@ -91,11 +95,12 @@ class ball():
 
 
 class btn:
-    def __init__(self,text):
+    def __init__(self,text,v):
         self.text = text
         self.rect = pygame.Rect(0,0,0,0)
         self.surf = pygame.Surface((10,10))
-        self.wave = pygame.Vector2((0,5))
+        self.wave = v
+        self.clicked = False
         
     def display(self,surface,pos =(0,0)):
         self.surf = test_font.render(self.text,True,(255,255,255),(100,100,255))
@@ -109,12 +114,17 @@ class btn:
         self.wave = self.wave.rotate(5) 
 
 
-    def run(self):
-        if self.rect.collidepoint(pygame.mouse.get_pos()):
+    def run(self,type):
+        if self.rect.collidepoint(pygame.mouse.get_pos()) and pygame.mouse.get_pressed()[0] and self.clicked == False:
             global view
-            view = "game"
-
-
+            test_sound2.play()
+            if type == "start":
+                view = "game"
+            elif type == "end":
+                view = "start"
+            self.clicked = True
+        if pygame.mouse.get_pressed()[0]:
+            self.clicked = False
 def display_text(text: str,surface,pos=(0,0),color = (255,255,255),bgcolor = (0,0,0)):
     text_surf = test_font.render(text,True,color)
     text_rect = text_surf.get_rect(center = pos)
@@ -126,21 +136,13 @@ surface = surface.convert()
 player = paddle(True)
 enemy_paddle = paddle() 
 s1,s2 = 0,0
-button = btn("single player")
+b1 = btn("single player",pygame.Vector2((0,5)))
+b2 = btn("main menu",pygame.Vector2((0,-5)))
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            button.run()
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
-                Ball.__init__()
-                player.__init__(True)
-                enemy_paddle.__init__()
-                view = "start"       
-
     if view == "game":
     #game window
         surface.fill('black')
@@ -157,13 +159,19 @@ while True:
         display_text(str(s1),surface,(screen_width/4,20))
         display_text(str(s2),surface,(3*screen_width/4,20))
 
-        screen.blit(surface,(0,0))
     elif view == "start":
         surface.fill((150,100,150))
         display_text("Pong",surface,(screen_width/2,screen_height/2 -100))
-        button.display(surface,(screen_width/2,screen_height/2))
+        b1.display(surface,(screen_width/2,screen_height/2))
+        b1.run("start")
+    elif view == "end":
+        surface.fill((150,100,150))
+        display_text("you won" if s1 ==10 else "you lost",surface,(screen_width/2,screen_height/2 -100))
+        b2.display(surface,(screen_width/2,screen_height/2))
+        b2.run("end")
+        s1,s2 = 0,0
 
-        screen.blit(surface,(0,0))
+    screen.blit(surface,(0,0))
     pygame.display.update()
     clock.tick(60)
 pygame.quit()
