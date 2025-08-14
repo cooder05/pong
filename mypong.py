@@ -10,6 +10,8 @@ pygame.display.set_caption('Pong')
 test_font = pygame.font.Font(None,50)
 test_sound = pygame.mixer.Sound("10844.mp3")
 test_sound2 = pygame.mixer.Sound("10676.mp3")
+pygame.mixer.music.load("Themepong.mp3")
+pygame.mixer.music.play(-1)
 clock = pygame.time.Clock()
 view ="start" 
 
@@ -122,8 +124,10 @@ class btn:
             test_sound2.play()
             if type == "start":
                 view = "game"
+                pygame.mixer.music.stop()
             elif type == "end":
                 view = "start"
+                pygame.mixer.music.play(-1)
             self.clicked = True
         if not pygame.mouse.get_pressed()[0] and self.clicked:
             self.clicked = False
