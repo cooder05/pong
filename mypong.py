@@ -1,5 +1,6 @@
 import pygame,math,random
 from sys import exit
+import effects
 
 pygame.init()
 
@@ -144,6 +145,7 @@ enemy_paddle = paddle()
 s1,s2 = 0,0
 b1 = btn("single player",pygame.Vector2((0,5)))
 b2 = btn("main menu",pygame.Vector2((0,-5)))
+p = effects.particles((150,100))
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -176,7 +178,6 @@ while True:
         display_text("you won" if s1==5 else "you lost",surface,(screen_width/2,screen_height/2 -100))
         b2.display(surface,(screen_width/2,screen_height/2))
         b2.run("end")
-
     screen.blit(surface,(0,0))
     pygame.display.update()
     clock.tick(60)
