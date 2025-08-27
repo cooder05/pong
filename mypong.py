@@ -1,6 +1,6 @@
 import pygame,math,random
 from sys import exit
-import effects
+from effects import particles
 
 pygame.init()
 
@@ -145,7 +145,8 @@ enemy_paddle = paddle()
 s1,s2 = 0,0
 b1 = btn("single player",pygame.Vector2((0,5)))
 b2 = btn("main menu",pygame.Vector2((0,-5)))
-p = effects.particles((150,100))
+boom=[]
+#boom.append(particles((100,100)))
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -171,6 +172,12 @@ while True:
         s1,s2 = 0,0
         surface.fill((150,100,150))
         display_text("Pong",surface,(screen_width/2,screen_height/2 -100))
+        boom.append(particles((100,100)))
+        for particle in boom:
+            particle.update(surface)
+            if particle.frames == 20:
+                boom.clear()
+                break
         b1.display(surface,(screen_width/2,screen_height/2))
         b1.run("start")
     elif view == "end":
