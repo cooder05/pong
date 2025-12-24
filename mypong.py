@@ -54,6 +54,7 @@ class ball():
         self.speed_y = random.randint(-4,4)
 
     def move(self,paddles):
+        global boom
         global s1,s2,view
         if self.rect.left <=0:
             s2 += 1
@@ -82,12 +83,16 @@ class ball():
             self.speed_x *= -1.1
             self.speed_x %= 10
             self.speed_x = math.floor(self.speed_x)
+            for _ in range(20):
+                boom.append(particles(self.rect.center,-1))
             test_sound.play()
         if newpos.colliderect(paddles[1]) :
             newpos.right = paddles[1].left
             self.speed_x *= -1.1
             self.speed_x %= -10
             self.speed_x = math.floor(self.speed_x)
+            for _ in range(20):
+                boom.append(particles(self.rect.center,1))
             test_sound.play()
         
         self.rect = newpos
@@ -145,7 +150,8 @@ enemy_paddle = paddle()
 s1,s2 = 0,0
 b1 = btn("single player",pygame.Vector2((0,5)))
 b2 = btn("main menu",pygame.Vector2((0,-5)))
-boom=[]
+boom= []
+remove= []
 #boom.append(particles((100,100)))
 while True:
     for event in pygame.event.get():
@@ -165,6 +171,16 @@ while True:
         enemy_paddle.draw(surface)
         player.draw(surface)
         Ball.draw(surface)
+        for particle in boom:
+            
+            if not particle.update(surface):
+                remove.append(particle)
+            
+        for par in remove:
+            boom.remove(par)
+
+        remove.clear()
+
         display_text(str(s1),surface,(screen_width/4,20))
         display_text(str(s2),surface,(3*screen_width/4,20))
 
@@ -172,12 +188,7 @@ while True:
         s1,s2 = 0,0
         surface.fill((150,100,150))
         display_text("Pong",surface,(screen_width/2,screen_height/2 -100))
-        boom.append(particles((100,100)))
-        for particle in boom:
-            particle.update(surface)
-            if particle.frames == 20:
-                boom.clear()
-                break
+        
         b1.display(surface,(screen_width/2,screen_height/2))
         b1.run("start")
     elif view == "end":
