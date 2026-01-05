@@ -19,7 +19,7 @@ view ="start"
 class paddle():
     def __init__(self, player = False):
         
-        self.y_offset = screen_height/20
+        self.y_offset = screen_height/10
         self.pos = [10+(screen_width-30)*(not player),screen_height/2 - self.y_offset]
         self.rect = pygame.Rect(self.pos,(10,screen_height/5))
         self.speed = 5
@@ -36,7 +36,7 @@ class paddle():
         
         else:
             if ball_pos [1] - self.y_offset >= 0 and ball_pos[1] + self.y_offset <= screen_height and ball_pos[0] >= screen_width/2:
-                self.pos[1] += math.floor((ball_pos[1] - self.rect.centery)*0.07)
+                self.pos[1] += math.floor((ball_pos[1] - self.rect.centery)*0.08) #moves to the ball
 
         self.rect = pygame.Rect(self.pos,(10,screen_height/5))
 
@@ -44,13 +44,16 @@ class paddle():
         pygame.draw.rect(surface,(225,225,225),self.rect)
 
 class ball():
-    def __init__(self):
+    def __init__(self,side):
         #creating self.pos create unsessary ovrehead of kepping
         # it updated with tha actual rect pos hence it is advise to not use it
         # abd just update the rect pos directly
         #self.pos = [screen_width/2,screen_height/2]
         self.rect = pygame.Rect((screen_width/2,screen_height/2),(20,20))
-        self.speed_x = random.randint(1,4)
+        if side == 1:
+            self.speed_x = random.randint(1,4)
+        else:
+            self.speed_x = random.randint(-4,-1)
         self.speed_y = random.randint(-4,4)
 
     def move(self,paddles):
@@ -58,11 +61,11 @@ class ball():
         global s1,s2,view
         if self.rect.left <=0:
             s2 += 1
-            self.__init__()
+            self.__init__(-1)
             
         if self.rect.right >= screen_width:
             s1 += 1
-            self.__init__()
+            self.__init__(+1)
         
         if s1 == 5 or s2 ==5:
             view = "end"
@@ -75,24 +78,26 @@ class ball():
             if newpos.colliderect(paddle) :
                 newpos.y = paddle.bottom if newpos.top >= (paddle.centery) else paddle.top-newpos.h
                 self.speed_y *= -1
+                #self.speed_y += (self.rect.centery-paddle.centery)
         
 
         newpos = newpos.move(self.speed_x,0)
         if newpos.colliderect(paddles[0]) :
             newpos.left = paddles[0].right
             self.speed_x *= -1.1
-            self.speed_x %= 10
-            self.speed_x = math.floor(self.speed_x)
+            self.speed_x = math.fmod(self.speed_x,6)       #change '6' as it might set speed_x to zero
+            self.speed_y += (self.rect.centery-paddles[0].centery)//25
             for _ in range(20):
-                boom.append(particles(self.rect.center,-1))
+                boom.append(particles(self.rect.center,1))
             test_sound.play()
         if newpos.colliderect(paddles[1]) :
             newpos.right = paddles[1].left
             self.speed_x *= -1.1
-            self.speed_x %= -10
+            self.speed_x = math.fmod(self.speed_x,6)
+            self.speed_y += (self.rect.centery-paddles[1].centery)//25
             self.speed_x = math.floor(self.speed_x)
             for _ in range(20):
-                boom.append(particles(self.rect.center,1))
+                boom.append(particles(self.rect.center,-1))
             test_sound.play()
         
         self.rect = newpos
@@ -142,7 +147,7 @@ def display_text(text: str,surface,pos=(0,0),color = (255,255,255),bgcolor = (0,
     text_rect = text_surf.get_rect(center = pos)
     surface.blit(text_surf,text_rect)
 
-Ball = ball()
+Ball = ball(-1)
 surface = pygame.Surface(screen.get_size())
 surface = surface.convert()
 player = paddle(True)
@@ -167,7 +172,7 @@ while True:
         Ball.move([player.rect,enemy_paddle.rect])
 
         pygame.draw.line(surface,(225,225,225),(screen_width/2,0),(screen_width/2,screen_height),2)
-        
+       
         enemy_paddle.draw(surface)
         player.draw(surface)
         Ball.draw(surface)
