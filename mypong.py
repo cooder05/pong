@@ -14,7 +14,11 @@ test_sound2 = pygame.mixer.Sound("10676.mp3")
 pygame.mixer.music.load("Themepong.mp3")
 pygame.mixer.music.play(-1)
 clock = pygame.time.Clock()
-view ="start" 
+clock2 = pygame.time.Clock()
+view ="start"
+waiting = bool
+wait_start = 0
+cooldown = 1
 
 class paddle():
     def __init__(self, mykeys = [pygame.K_DOWN,pygame.K_UP] ,player = False, left = True):
@@ -90,19 +94,18 @@ class ball():
         if newpos.colliderect(paddles[0]) :
             newpos.left = paddles[0].right
             self.speed_x *= -1.1
-            self.speed_x = math.fmod(self.speed_x,6)       #change '6' as it might set speed_x to zero
+            self.speed_x = math.fmod(self.speed_x,8)       #change '6' as it might set speed_x to zero
             self.speed_y += (self.rect.centery-paddles[0].centery)//25
             for _ in range(20):
-                boom.append(particles(self.rect.center,1))
+                boom.append(particles(pygame.Rect((self.rect.center),(4,4))))
             test_sound.play()
         if newpos.colliderect(paddles[1]) :
             newpos.right = paddles[1].left
             self.speed_x *= -1.1
-            self.speed_x = math.fmod(self.speed_x,6)
+            self.speed_x = math.fmod(self.speed_x,8)
             self.speed_y += (self.rect.centery-paddles[1].centery)//25
-            self.speed_x = math.floor(self.speed_x)
             for _ in range(20):
-                boom.append(particles(self.rect.center,-1))
+                boom.append(particles(pygame.Rect((self.rect.center),(4,4)),-1))
             test_sound.play()
         
         self.rect = newpos
@@ -167,7 +170,7 @@ s1,s2 = 0,0
 b1 = btn("1 player",pygame.Vector2((0,5)))
 b2 = btn("2 player",pygame.Vector2((0,-5)))
 b3 = btn("main menu",pygame.Vector2((0,-5)))
-
+powerup = particles(pygame.Rect(400,0,20,20))
 boom= []
 remove= []
 while True:
@@ -176,7 +179,7 @@ while True:
             pygame.quit()
             exit()
     if view == "game":
-    #game window
+        #game window
         surface.fill('black')
         if players == 1: 
             p_2.move(Ball.return_pos())
@@ -187,20 +190,29 @@ while True:
         p_1.move()
         Ball.move([p_1.rect,p_2.rect])
 
-        pygame.draw.line(surface,(225,225,225),(screen_width/2,0),(screen_width/2,screen_height),2)
+        for i in range(7):
+            pygame.draw.line(surface,(255,225,225),(screen_width/2,screen_height*i/6+20),(screen_width/2,screen_height*i/6+50),2)
        
         p_2.draw(surface)
         p_1.draw(surface)
         Ball.draw(surface)
         for particle in boom:
-            
-            if not particle.update(surface):
-                remove.append(particle)
-            
+            if not particle.explode(surface):
+                boom.remove(particle)
+                """remove.append(particle)
         for par in remove:
             boom.remove(par)
-
         remove.clear()
+        """
+        if not powerup.rain(surface):
+            if not waiting:
+                waiting = True
+                wait_start = pygame.time.get_ticks()
+
+        if waiting and pygame.time.get_ticks() - wait_start >= cooldown*1000:
+            waiting = False
+            powerup.reset()
+            cooldown = random.randint(1,5)
 
         display_text(str(s1),surface,(screen_width/4,20))
         display_text(str(s2),surface,(3*screen_width/4,20))
