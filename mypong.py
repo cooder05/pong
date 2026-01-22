@@ -4,13 +4,14 @@ from effects import particles
 
 pygame.init()
 
-screen_width = 700
-screen_height = 400
+screen_width = 1000
+screen_height = 500
 screen = pygame.display.set_mode((screen_width,screen_height))
+screen_width, screen_height = screen.get_size()
 pygame.display.set_caption('Pong')
 test_font = pygame.font.Font(None,50)
-test_sound = pygame.mixer.Sound("10844.mp3")
-test_sound2 = pygame.mixer.Sound("10676.mp3")
+bounce_sound = pygame.mixer.Sound("10844.mp3")
+click_sound = pygame.mixer.Sound("10676.mp3")
 pygame.mixer.music.load("Themepong.mp3")
 pygame.mixer.music.play(-1)
 clock = pygame.time.Clock()
@@ -25,7 +26,7 @@ class paddle():
         
         self.y_offset = screen_height/10
         self.pos = [10+(screen_width-30)*(not left),screen_height/2 - self.y_offset]
-        self.rect = pygame.Rect(self.pos,(10,screen_height/5))
+        self.rect = pygame.Rect(self.pos,(10,70))
         self.speed = 5
         self.player = player
         self.mykeys = mykeys
@@ -43,7 +44,7 @@ class paddle():
             if ball_pos [1] - self.y_offset >= 0 and ball_pos[1] + self.y_offset <= screen_height and ball_pos[0] >= screen_width/2:
                 self.pos[1] += math.floor((ball_pos[1] - self.rect.centery)*0.08) #moves to the ball
 
-        self.rect = pygame.Rect(self.pos,(10,screen_height/5))
+        self.rect = pygame.Rect(self.pos,(self.rect.w,self.rect.h))
 
     def draw(self,surface):
         pygame.draw.rect(surface,(225,225,225),self.rect)
@@ -54,15 +55,16 @@ class paddle():
 
 class ball():
     def __init__(self,side):
-        #creating self.pos create unsessary ovrehead of kepping
+        #creating self.pos create unsessary ovrehead but usefull in some cases on in the Ball class below
         # it updated with tha actual rect pos hence it is advise to not use it
         # abd just update the rect pos directly
         #self.pos = [screen_width/2,screen_height/2]
         self.rect = pygame.Rect((screen_width/2,screen_height/2),(20,20))
+        self.trailarr =[]
         if side == 1:
-            self.speed_x = random.randint(1,4)
+            self.speed_x = random.randint(2,4)
         else:
-            self.speed_x = random.randint(-4,-1)
+            self.speed_x = random.randint(-4,-2)
         self.speed_y = random.randint(-4,4)
 
     def move(self,paddles):
@@ -88,25 +90,21 @@ class ball():
                 newpos.y = paddle.bottom if newpos.top >= (paddle.centery) else paddle.top-newpos.h
                 self.speed_y *= -1
                 #self.speed_y += (self.rect.centery-paddle.centery)
-        
-
         newpos = newpos.move(self.speed_x,0)
-        if newpos.colliderect(paddles[0]) :
-            newpos.left = paddles[0].right
-            self.speed_x *= -1.1
-            self.speed_x = math.fmod(self.speed_x,8)       #change '6' as it might set speed_x to zero
-            self.speed_y += (self.rect.centery-paddles[0].centery)//25
-            for _ in range(20):
-                boom.append(particles(pygame.Rect((self.rect.center),(4,4))))
-            test_sound.play()
-        if newpos.colliderect(paddles[1]) :
-            newpos.right = paddles[1].left
-            self.speed_x *= -1.1
-            self.speed_x = math.fmod(self.speed_x,8)
-            self.speed_y += (self.rect.centery-paddles[1].centery)//25
-            for _ in range(20):
-                boom.append(particles(pygame.Rect((self.rect.center),(4,4)),-1))
-            test_sound.play()
+        for p in paddles:
+            if newpos.colliderect(p):
+                side = 1 if newpos.centerx >p.centerx else -1
+                self.speed_x *= -1
+                self.speed_x = math.fmod(self.speed_x,8)
+                self.speed_x += side*2
+                self.speed_y += (self.rect.centery-p.centery)//20
+                if side > 0:
+                    newpos.left = p.right
+                else:
+                    newpos.right = p.left
+                for _ in range(20):
+                    boom.append(particles(pygame.Rect((self.rect.center),(4,4)),side))
+                bounce_sound.play()
         
         self.rect = newpos
         
@@ -114,6 +112,10 @@ class ball():
         return self.rect.center
         
     def draw(self,surface):
+        self.trailarr.append(particles(pygame.Rect((self.rect.topright),(10,10))))
+        for e in self.trailarr:
+            if not e.trail(surface,self.rect.topleft):
+                self.trailarr.remove(e)
         pygame.draw.circle(surface,(225,225,225),(self.rect.centerx,self.rect.centery),10)
 
 
@@ -126,9 +128,9 @@ class btn:
         self.clicked = False
         
     def display(self,surface,pos =(0,0)):
-        self.surf = test_font.render(self.text,True,(255,255,255),(100,100,255))
+        self.surf = test_font.render(self.text,True,(255,255,255),(0,0,0))
         self.rect = self.surf.get_rect(center = pos)
-        self.hover()
+        #self.hover()
         pygame.draw.rect(surface,(255,255,255),self.rect.inflate(10,10),5)
         surface.blit(self.surf,self.rect)
 
@@ -139,7 +141,7 @@ class btn:
 
     def run(self,type):
         if self.rect.collidepoint(pygame.mouse.get_pos()) and pygame.mouse.get_pressed()[0] and self.clicked == False:
-            test_sound2.play()
+            click_sound.play()
             self.clicked = True
         if not pygame.mouse.get_pressed()[0] and self.clicked:
             global view, players
@@ -155,6 +157,7 @@ class btn:
                 view = "start"
                 pygame.mixer.music.play(-1)
             self.clicked = False
+
 def display_text(text: str,surface,pos=(0,0),color = (255,255,255),bgcolor = (0,0,0)):
     text_surf = test_font.render(text,True,color)
     text_rect = text_surf.get_rect(center = pos)
@@ -169,8 +172,9 @@ p_2 = paddle([pygame.K_s,pygame.K_w],False,False)
 s1,s2 = 0,0
 b1 = btn("1 player",pygame.Vector2((0,5)))
 b2 = btn("2 player",pygame.Vector2((0,-5)))
-b3 = btn("main menu",pygame.Vector2((0,-5)))
-powerup = particles(pygame.Rect(400,0,20,20))
+b3 = btn("settings",pygame.Vector2((0,-5)))
+b4 = btn("main menu",pygame.Vector2((0,-5)))
+wall = particles(pygame.Rect(400,0,20,150))
 boom= []
 remove= []
 while True:
@@ -188,51 +192,53 @@ while True:
             p_2.setplayer([pygame.K_DOWN,pygame.K_UP])
             players = 1
         p_1.move()
-        Ball.move([p_1.rect,p_2.rect])
+        Ball.move([p_1.rect,p_2.rect,wall.rect])
 
-        for i in range(7):
-            pygame.draw.line(surface,(255,225,225),(screen_width/2,screen_height*i/6+20),(screen_width/2,screen_height*i/6+50),2)
+        for i in range(math.floor(screen_height/20)):
+            pygame.draw.line(surface,(255,225,225),(screen_width/2,screen_height*i/20),(screen_width/2,screen_height*i/20+10),4)
        
         p_2.draw(surface)
         p_1.draw(surface)
         Ball.draw(surface)
         for particle in boom:
             if not particle.explode(surface):
-                boom.remove(particle)
-                """remove.append(particle)
+                #boom.remove(particle)
+                remove.append(particle)
         for par in remove:
             boom.remove(par)
         remove.clear()
-        """
-        if not powerup.rain(surface):
+
+        if not wall.rain(surface):
             if not waiting:
                 waiting = True
                 wait_start = pygame.time.get_ticks()
 
         if waiting and pygame.time.get_ticks() - wait_start >= cooldown*1000:
             waiting = False
-            powerup.reset()
-            cooldown = random.randint(1,5)
+            wall.reset()
+            cooldown = random.randint(1,3)
 
         display_text(str(s1),surface,(screen_width/4,20))
         display_text(str(s2),surface,(3*screen_width/4,20))
 
     elif view == "start":
         s1,s2 = 0,0
-        surface.fill((150,100,150))
+        surface.fill((0,0,0))
         display_text("Pong",surface,(screen_width/2,screen_height/2 -100))
         
-        b1.display(surface,(screen_width/2,screen_height/2))
+        b1.display(surface,(screen_width*2/5,screen_height/2))
         b1.run("start1")
-        b2.display(surface,(screen_width/2,screen_height/2 + 80))
+        b2.display(surface,(screen_width*3/5,screen_height/2))
         b2.run("start2")
+        b3.display(surface,(screen_width/2,screen_height/2+100))
+        b3.run("start1")
     elif view == "end":
         p_1.setplayer([pygame.K_DOWN,pygame.K_UP])
         p_2.player = False
-        surface.fill((150,100,150))
+        surface.fill((0,0,0))
         display_text("p1 won" if s1==5 else "p2 won",surface,(screen_width/2,screen_height/2 -100))
-        b3.display(surface,(screen_width/2,screen_height/2))
-        b3.run("end")
+        b4.display(surface,(screen_width/2,screen_height/2))
+        b4.run("end")
     screen.blit(surface,(0,0))
     pygame.display.update()
     clock.tick(60)
