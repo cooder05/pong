@@ -8,9 +8,10 @@ class particles:
         self.pos = list(rect.topleft)
         self.velocity = [round(random.uniform(0.5,1),2)*dir,round(random.uniform(-1,1),2)]
         self.frames = 0
-        self.alpha = 25
+        self.alpha = 100
         self.collide = False
-        self.tempsurf = pygame.Surface(self.rect.size, pygame.SRCALPHA).convert_alpha()
+        self.tempsurf = pygame.Surface(self.rect.size,pygame.SRCALPHA).convert_alpha()
+        self.tempsurf.fill((255, 255, 255,255))
     def explode(self,surface):
         if (self.frames >= 15):
             return False
@@ -30,13 +31,12 @@ class particles:
         self.draw(surface)
         return True
 
-    def trail(self,surface,pos:tuple[int,int]):
+    def fade(self,surface):
         if self.alpha > 0:
             self.alpha = max(0, self.alpha - 5)
-            self.tempsurf.fill((255, 255, 255,self.alpha))
-            surface.set_alpha(self.alpha)  #cool effect
-            self.draw(surface)
-            surface.blit(self.tempsurf,pos)
+            self.tempsurf.set_alpha(self.alpha)
+            self.draw(self.tempsurf)
+            surface.blit(self.tempsurf,self.rect)
             return True
         return False
     

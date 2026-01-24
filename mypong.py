@@ -20,7 +20,6 @@ view ="start"
 waiting = bool
 wait_start = 0
 cooldown = 1
-
 class paddle():
     def __init__(self, mykeys = [pygame.K_DOWN,pygame.K_UP] ,player = False, left = True):
         
@@ -73,11 +72,11 @@ class ball():
         if self.rect.left <=0:
             s2 += 1
             self.__init__(-1)
-            
+
         if self.rect.right >= screen_width:
             s1 += 1
             self.__init__(+1)
-        
+
         if s1 == 5 or s2 ==5:
             view = "end"
         
@@ -112,11 +111,11 @@ class ball():
         return self.rect.center
         
     def draw(self,surface):
+        pygame.draw.circle(surface,(225,225,225),(self.rect.centerx,self.rect.centery),10)
         self.trailarr.append(particles(pygame.Rect((self.rect.topright),(10,10))))
         for e in self.trailarr:
-            if not e.trail(surface,self.rect.topleft):
+            if not e.fade(surface):
                 self.trailarr.remove(e)
-        pygame.draw.circle(surface,(225,225,225),(self.rect.centerx,self.rect.centery),10)
 
 
 class btn:
