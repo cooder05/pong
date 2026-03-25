@@ -8,7 +8,7 @@ class particles:
         self.pos = list(rect.topleft)
         self.velocity = [round(random.uniform(0.5,1),2)*dir,round(random.uniform(-1,1),2)]
         self.frames = 0
-        self.alpha = 100
+        self.alpha = 200
         self.collide = False
         self.tempsurf = pygame.Surface(self.rect.size,pygame.SRCALPHA).convert_alpha()
         self.tempsurf.fill((255, 255, 255,255))
@@ -35,7 +35,6 @@ class particles:
         if self.alpha > 0:
             self.alpha = max(0, self.alpha - 5)
             self.tempsurf.set_alpha(self.alpha)
-            self.draw(self.tempsurf)
             surface.blit(self.tempsurf,self.rect)
             return True
         return False

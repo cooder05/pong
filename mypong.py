@@ -6,8 +6,9 @@ pygame.init()
 
 screen_width = 1000
 screen_height = 500
+WHITE = (255,255,255)
 screen = pygame.display.set_mode((screen_width,screen_height))
-screen_width, screen_height = screen.get_size()
+#screen_width, screen_height = screen.get_size()
 pygame.display.set_caption('Pong')
 test_font = pygame.font.Font(None,50)
 bounce_sound = pygame.mixer.Sound("10844.mp3")
@@ -17,9 +18,16 @@ pygame.mixer.music.play(-1)
 clock = pygame.time.Clock()
 clock2 = pygame.time.Clock()
 view ="start"
-waiting = bool
+waiting = False
 wait_start = 0
 cooldown = 1
+display_modes = pygame.display.list_modes()[:5]
+new_display_modes = []
+for i in display_modes:
+    i = (i,test_font.render(str(i),True,WHITE,(0,0,0)))
+    new_display_modes.append(i)
+
+print()
 class paddle():
     def __init__(self, mykeys = [pygame.K_DOWN,pygame.K_UP] ,player = False, left = True):
         
@@ -111,53 +119,106 @@ class ball():
         return self.rect.center
         
     def draw(self,surface):
-        pygame.draw.circle(surface,(225,225,225),(self.rect.centerx,self.rect.centery),10)
-        self.trailarr.append(particles(pygame.Rect((self.rect.topright),(10,10))))
+        self.trailarr.append(particles(pygame.Rect((self.rect.centerx-2,self.rect.centery-2),(5,5))))
         for e in self.trailarr:
             if not e.fade(surface):
                 self.trailarr.remove(e)
+        pygame.draw.circle(surface,(225,225,225),(self.rect.centerx,self.rect.centery),10)
 
 
 class btn:
-    def __init__(self,text,v):
+    def __init__(self,text,v,percent=100):
         self.text = text
         self.rect = pygame.Rect(0,0,0,0)
         self.surf = pygame.Surface((10,10))
         self.wave = v
         self.clicked = False
+        self.percent = percent
         
     def display(self,surface,pos =(0,0)):
-        self.surf = test_font.render(self.text,True,(255,255,255),(0,0,0))
-        self.rect = self.surf.get_rect(center = pos)
+        self.tsurf = test_font.render(self.text,True,WHITE,(0,0,0))
+        self.rect = self.tsurf.get_rect(center = pos)
         #self.hover()
-        pygame.draw.rect(surface,(255,255,255),self.rect.inflate(10,10),5)
-        surface.blit(self.surf,self.rect)
+        pygame.draw.rect(surface,WHITE,self.rect.inflate(10,10),5)
+        surface.blit(self.tsurf,self.rect)
 
     def hover(self):
         self.rect.y += self.wave[1]
-        self.wave = self.wave.rotate(5) 
-
+        self.wave = self.wave.rotate(5)
 
     def run(self,type):
-        if self.rect.collidepoint(pygame.mouse.get_pos()) and pygame.mouse.get_pressed()[0] and self.clicked == False:
-            click_sound.play()
+        if self.rect.collidepoint(pygame.mouse.get_pos()):
+            mouse_pressed = pygame.mouse.get_pressed()[0]
+            if mouse_pressed and not self.clicked:
+                click_sound.play()
+                self.clicked = True
+            elif self.clicked:
+                global view, players
+                if type == "start1":
+                    players = 1
+                    view = "game"
+                    pygame.mixer.music.stop()
+                elif type == "start2":
+                    players = 2
+                    view = "game"
+                    pygame.mixer.music.stop()
+                elif type == "set":
+                    view = "settings"
+                elif type == "end":
+                    view = "start"
+                    pygame.mixer.music.play(-1)
+                self.clicked = False
+
+    def slider(self,surface,pos =(0,0)):
+        #self.tsurf = test_font.render(self.text+" "+str(math.floor(self.percent*100))+": ",True,WHITE,(0,0,0))
+        self.tsurf = test_font.render(self.text,True,WHITE,(0,0,0))
+        self.txtb = pygame.Rect((pos[0]-250,pos[1]),(250,self.tsurf.get_height()))
+        self.rect = pygame.Rect(pos,(250,self.tsurf.get_height()))
+        pygame.draw.line(surface,(150,150,150),(self.rect.left,self.rect.centery),(self.rect.right,self.rect.centery),8)
+        pygame.draw.line(surface,WHITE,(self.rect.left,self.rect.centery),(self.rect.left+250*self.percent,self.rect.centery),4)
+        pygame.draw.circle(surface,(200,200,200),(self.rect.left+250*self.percent,self.rect.centery+1),8)
+        pygame.draw.circle(surface,WHITE,pos,3)
+        #pygame.draw.rect(surface,WHITE,rect=self.rect,width=5)
+        surface.blit(self.tsurf,self.txtb)
+        #pygame.draw.rect(surface,WHITE,rect=self.txtb,width=5)
+
+    def slide(self):
+        mouse_pos = list(pygame.mouse.get_pos())
+        mouse_pressed = pygame.mouse.get_pressed()[0]
+        if mouse_pressed and self.rect.collidepoint(mouse_pos):
             self.clicked = True
-        if not pygame.mouse.get_pressed()[0] and self.clicked:
-            global view, players
-            if type == "start1":
-                players = 1
-                view = "game"
-                pygame.mixer.music.stop()
-            elif type == "start2":
-                players = 2
-                view = "game"
-                pygame.mixer.music.stop()
-            elif type == "end":
-                view = "start"
-                pygame.mixer.music.play(-1)
+        if self.clicked:
+            self.percent = max(0,min(1,(mouse_pos[0]-self.rect.left)/250))
+            print(self.percent)
+            pygame.mixer.music.set_volume(self.percent)
+
+        if not mouse_pressed and self.clicked:
             self.clicked = False
 
-def display_text(text: str,surface,pos=(0,0),color = (255,255,255),bgcolor = (0,0,0)):
+    def dropdown(self,pos):
+        self.tsurf = test_font.render(self.text,True,WHITE,(0,0,0))
+        self.rect = pygame.Rect(pos,(250,self.tsurf.get_height()))
+        self.txtb = pygame.Rect((pos[0]-250,pos[1]),(250,self.tsurf.get_height()))
+        #pygame.draw.rect(surface,WHITE,rect=self.rect,width=5)
+        pygame.draw.circle(surface,WHITE,pos,3)
+        surface.blit(self.tsurf,self.txtb)
+        #pygame.draw.rect(surface,WHITE,rect=self.txtb,width=5)
+        self.drop(surface)
+    
+    def drop(self,surface):
+        mouse_pos = list(pygame.mouse.get_pos())
+        mouse_pos[0] -= 10
+        mouse_pressed = pygame.mouse.get_pressed()[0]
+        if mouse_pressed and self.rect.collidepoint(mouse_pos):
+            self.clicked = True
+        if self.clicked:
+            pass
+        if not mouse_pressed and self.clicked:
+            for i in new_display_modes:
+                surface.blit(i[1],mouse_pos)
+            self.clicked = False
+
+def display_text(text: str,surface,pos=(0,0),color = WHITE,bgcolor = (0,0,0)):
     text_surf = test_font.render(text,True,color)
     text_rect = text_surf.get_rect(center = pos)
     surface.blit(text_surf,text_rect)
@@ -173,10 +234,14 @@ b1 = btn("1 player",pygame.Vector2((0,5)))
 b2 = btn("2 player",pygame.Vector2((0,-5)))
 b3 = btn("settings",pygame.Vector2((0,-5)))
 b4 = btn("main menu",pygame.Vector2((0,-5)))
+pygame.mixer.music.set_volume(0.1)
+slider = btn("volume:",pygame.Vector2((0,-5)),pygame.mixer.music.get_volume())
+ddown = btn("screen size:",pygame.Vector2((0,-5)))
 wall = particles(pygame.Rect(400,0,20,150))
 boom= []
 remove= []
 while True:
+    pygame.event.pump()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -230,7 +295,15 @@ while True:
         b2.display(surface,(screen_width*3/5,screen_height/2))
         b2.run("start2")
         b3.display(surface,(screen_width/2,screen_height/2+100))
-        b3.run("start1")
+        b3.run("set")
+    elif view == "settings":
+        surface.fill((0,0,0))
+        display_text("Settings",surface,(screen_width/2,screen_height/4 -100))
+        slider.slider(surface,(screen_width/2,screen_height/4))
+        slider.slide()
+        ddown.dropdown((screen_width/2,screen_height/4 +50))
+        b4.display(surface,(screen_width/2,screen_height-50))
+        b4.run("end")
     elif view == "end":
         p_1.setplayer([pygame.K_DOWN,pygame.K_UP])
         p_2.player = False
