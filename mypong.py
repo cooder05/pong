@@ -7,7 +7,9 @@ pygame.init()
 screen_width = 1000
 screen_height = 500
 WHITE = (255,255,255)
-screen = pygame.display.set_mode((screen_width,screen_height))
+GRAY = (150,150,150)
+BLACK = (0,0,0)
+screen = pygame.display.set_mode((screen_width,screen_height),pygame.SCALED)
 #screen_width, screen_height = screen.get_size()
 pygame.display.set_caption('Pong')
 test_font = pygame.font.Font(None,50)
@@ -21,13 +23,13 @@ view ="start"
 waiting = False
 wait_start = 0
 cooldown = 1
-display_modes = pygame.display.list_modes()[:5]
+display_modes = pygame.display.list_modes()[15:17]
+display_modes.append((screen_width,screen_height))
 new_display_modes = []
 for i in display_modes:
-    i = (i,test_font.render(str(i),True,WHITE,(0,0,0)))
+    i = (i,test_font.render(str(i),True,WHITE,BLACK))
     new_display_modes.append(i)
 
-print()
 class paddle():
     def __init__(self, mykeys = [pygame.K_DOWN,pygame.K_UP] ,player = False, left = True):
         
@@ -134,9 +136,10 @@ class btn:
         self.wave = v
         self.clicked = False
         self.percent = percent
+        self.dropped = False
         
     def display(self,surface,pos =(0,0)):
-        self.tsurf = test_font.render(self.text,True,WHITE,(0,0,0))
+        self.tsurf = test_font.render(self.text,True,WHITE,BLACK)
         self.rect = self.tsurf.get_rect(center = pos)
         #self.hover()
         pygame.draw.rect(surface,WHITE,self.rect.inflate(10,10),5)
@@ -170,8 +173,8 @@ class btn:
                 self.clicked = False
 
     def slider(self,surface,pos =(0,0)):
-        #self.tsurf = test_font.render(self.text+" "+str(math.floor(self.percent*100))+": ",True,WHITE,(0,0,0))
-        self.tsurf = test_font.render(self.text,True,WHITE,(0,0,0))
+        #self.tsurf = test_font.render(self.text+" "+str(math.floor(self.percent*100))+": ",True,WHITE,BLACK)
+        self.tsurf = test_font.render(self.text,True,WHITE,BLACK)
         self.txtb = pygame.Rect((pos[0]-250,pos[1]),(250,self.tsurf.get_height()))
         self.rect = pygame.Rect(pos,(250,self.tsurf.get_height()))
         pygame.draw.line(surface,(150,150,150),(self.rect.left,self.rect.centery),(self.rect.right,self.rect.centery),8)
@@ -189,17 +192,16 @@ class btn:
             self.clicked = True
         if self.clicked:
             self.percent = max(0,min(1,(mouse_pos[0]-self.rect.left)/250))
-            print(self.percent)
             pygame.mixer.music.set_volume(self.percent)
 
         if not mouse_pressed and self.clicked:
             self.clicked = False
 
     def dropdown(self,pos):
-        self.tsurf = test_font.render(self.text,True,WHITE,(0,0,0))
+        self.tsurf = test_font.render(self.text,True,WHITE,BLACK)
         self.rect = pygame.Rect(pos,(250,self.tsurf.get_height()))
         self.txtb = pygame.Rect((pos[0]-250,pos[1]),(250,self.tsurf.get_height()))
-        #pygame.draw.rect(surface,WHITE,rect=self.rect,width=5)
+        pygame.draw.rect(surface,WHITE,self.rect,width=5)
         pygame.draw.circle(surface,WHITE,pos,3)
         surface.blit(self.tsurf,self.txtb)
         #pygame.draw.rect(surface,WHITE,rect=self.txtb,width=5)
@@ -211,24 +213,38 @@ class btn:
         mouse_pressed = pygame.mouse.get_pressed()[0]
         if mouse_pressed and self.rect.collidepoint(mouse_pos):
             self.clicked = True
-        if self.clicked:
-            pass
         if not mouse_pressed and self.clicked:
-            for i in new_display_modes:
-                surface.blit(i[1],mouse_pos)
+            self.dropped = not self.dropped
             self.clicked = False
+        if self.dropped:
+            for i in range(len(new_display_modes)):
+                temp = self.rect.move(0,i*50)
+                color = GRAY if temp.collidepoint(*mouse_pos) else BLACK
+                if color == GRAY  and mouse_pressed:
+                    global screen_height, screen_width
+                    pygame.display.set_mode(new_display_modes[i][0])
+                    screen_width, screen_height = new_display_modes[i][0]
+                    set_game()
+                    self.dropped = False
+                pygame.draw.rect(surface,color,temp)
+                new_display_modes[i][1].set_colorkey(BLACK)
+                surface.blit(new_display_modes[i][1],(self.rect.x,self.rect.y+i*50),)
 
-def display_text(text: str,surface,pos=(0,0),color = WHITE,bgcolor = (0,0,0)):
+def display_text(text: str,surface,pos=(0,0),color = WHITE,bgcolor = BLACK):
     text_surf = test_font.render(text,True,color)
     text_rect = text_surf.get_rect(center = pos)
     surface.blit(text_surf,text_rect)
 
-Ball = ball(-1)
-surface = pygame.Surface(screen.get_size())
-surface = surface.convert()
-p_1 = paddle([pygame.K_DOWN,pygame.K_UP],True)
-players = 1
-p_2 = paddle([pygame.K_s,pygame.K_w],False,False) 
+def set_game():
+    global Ball,surface,p_1,p_2,players
+    Ball = ball(-1)
+    surface = pygame.Surface((screen_width,screen_height))
+    surface = surface.convert()
+    p_1 = paddle([pygame.K_DOWN,pygame.K_UP],True)
+    players = 1
+    p_2 = paddle([pygame.K_s,pygame.K_w],False,False)
+
+set_game()
 s1,s2 = 0,0
 b1 = btn("1 player",pygame.Vector2((0,5)))
 b2 = btn("2 player",pygame.Vector2((0,-5)))
@@ -287,17 +303,17 @@ while True:
 
     elif view == "start":
         s1,s2 = 0,0
-        surface.fill((0,0,0))
+        surface.fill(BLACK)
         display_text("Pong",surface,(screen_width/2,screen_height/2 -100))
         
-        b1.display(surface,(screen_width*2/5,screen_height/2))
+        b1.display(surface,(screen_width/2,screen_height/2))
         b1.run("start1")
-        b2.display(surface,(screen_width*3/5,screen_height/2))
+        b2.display(surface,(screen_width/2,screen_height/2+50))
         b2.run("start2")
         b3.display(surface,(screen_width/2,screen_height/2+100))
         b3.run("set")
     elif view == "settings":
-        surface.fill((0,0,0))
+        surface.fill(BLACK)
         display_text("Settings",surface,(screen_width/2,screen_height/4 -100))
         slider.slider(surface,(screen_width/2,screen_height/4))
         slider.slide()
@@ -307,7 +323,7 @@ while True:
     elif view == "end":
         p_1.setplayer([pygame.K_DOWN,pygame.K_UP])
         p_2.player = False
-        surface.fill((0,0,0))
+        surface.fill(BLACK)
         display_text("p1 won" if s1==5 else "p2 won",surface,(screen_width/2,screen_height/2 -100))
         b4.display(surface,(screen_width/2,screen_height/2))
         b4.run("end")
