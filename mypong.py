@@ -150,27 +150,26 @@ class btn:
         self.wave = self.wave.rotate(5)
 
     def run(self,type):
-        if self.rect.collidepoint(pygame.mouse.get_pos()):
-            mouse_pressed = pygame.mouse.get_pressed()[0]
-            if mouse_pressed and not self.clicked:
-                click_sound.play()
-                self.clicked = True
-            elif self.clicked:
-                global view, players
-                if type == "start1":
-                    players = 1
-                    view = "game"
-                    pygame.mixer.music.stop()
-                elif type == "start2":
-                    players = 2
-                    view = "game"
-                    pygame.mixer.music.stop()
-                elif type == "set":
-                    view = "settings"
-                elif type == "end":
-                    view = "start"
-                    pygame.mixer.music.play(-1)
-                self.clicked = False
+        mouse_pressed = pygame.mouse.get_pressed()[0]
+        if self.rect.collidepoint(pygame.mouse.get_pos()) and mouse_pressed and not self.clicked:
+            click_sound.play()
+            self.clicked = True
+        if self.clicked and not mouse_pressed:
+            global view, players
+            if type == "start1":
+                players = 1
+                view = "game"
+                pygame.mixer.music.stop()
+            elif type == "start2":
+                players = 2
+                view = "game"
+                pygame.mixer.music.stop()
+            elif type == "set":
+                view = "settings"
+            elif type == "end":
+                view = "start"
+                pygame.mixer.music.play(-1)
+            self.clicked = False
 
     def slider(self,surface,pos =(0,0)):
         #self.tsurf = test_font.render(self.text+" "+str(math.floor(self.percent*100))+": ",True,WHITE,BLACK)
@@ -180,11 +179,8 @@ class btn:
         pygame.draw.line(surface,(150,150,150),(self.rect.left,self.rect.centery),(self.rect.right,self.rect.centery),8)
         pygame.draw.line(surface,WHITE,(self.rect.left,self.rect.centery),(self.rect.left+250*self.percent,self.rect.centery),4)
         pygame.draw.circle(surface,(200,200,200),(self.rect.left+250*self.percent,self.rect.centery+1),8)
-        pygame.draw.circle(surface,WHITE,pos,3)
-        #pygame.draw.rect(surface,WHITE,rect=self.rect,width=5)
         surface.blit(self.tsurf,self.txtb)
-        #pygame.draw.rect(surface,WHITE,rect=self.txtb,width=5)
-
+        
     def slide(self):
         mouse_pos = list(pygame.mouse.get_pos())
         mouse_pressed = pygame.mouse.get_pressed()[0]
@@ -198,13 +194,13 @@ class btn:
             self.clicked = False
 
     def dropdown(self,pos):
-        self.tsurf = test_font.render(self.text,True,WHITE,BLACK)
+        self.tsurf = test_font.render(self.text,True,WHITE)
+        curr = str(screen_width)+"x"+str(screen_height)
+        self.current = test_font.render(curr,True,WHITE)
         self.rect = pygame.Rect(pos,(250,self.tsurf.get_height()))
         self.txtb = pygame.Rect((pos[0]-250,pos[1]),(250,self.tsurf.get_height()))
-        pygame.draw.rect(surface,WHITE,self.rect,width=5)
-        pygame.draw.circle(surface,WHITE,pos,3)
         surface.blit(self.tsurf,self.txtb)
-        #pygame.draw.rect(surface,WHITE,rect=self.txtb,width=5)
+        surface.blit(self.current,self.rect)
         self.drop(surface)
     
     def drop(self,surface):
